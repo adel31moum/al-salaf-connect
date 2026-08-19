@@ -1,0 +1,11 @@
+{
+  "name": "ملتقى السلف — Al-Salaf Connect",
+  "short_name": "Al-Salaf",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#082821",
+  "theme_color": "#0E3B2E",
+  "lang": "ar",
+  "dir": "rtl",
+  "icons": []
+}
