@@ -1,0 +1,10 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+# مهم جدًا لتطبيقات React Router: بدون هذا السطر، أي رابط غير الرئيسية
+# (مثل /zawaj أو /dawah) سيُرجع 404 من Netlify عند تحديث الصفحة أو فتح الرابط مباشرة.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
