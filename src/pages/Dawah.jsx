@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import VerseBanner from '../components/VerseBanner';
-import { supabase } from '../lib/supabaseClient';
+import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
 
 const STARTER = {
   role: 'assistant',
@@ -44,6 +44,11 @@ export default function Dawah() {
     <div className="px-[6vw] py-16 bg-maroon text-parchment min-h-[70vh]">
       <VerseBanner contextKey="dawah" />
       <h2 className="font-display text-3xl mt-10 mb-8">مساعد الدعوة الذكي</h2>
+      {!isSupabaseConfigured && (
+        <div className="max-w-xl text-sm bg-black/25 border border-parchment/25 rounded p-4 mb-6">
+          وضع المعاينة: المساعد غير مفعَّل بعد على هذه النسخة (بانتظار ربط مفتاح Anthropic API من المشرف). الرسائل أدناه ستُظهر رسالة تنبيه بدل الرد الفعلي.
+        </div>
+      )}
       <div className="max-w-xl bg-black/20 border border-parchment/20 rounded p-6 space-y-4">
         {messages.map((m, i) => (
           <div key={i} className={`flex ${m.role === 'user' ? 'flex-row-reverse' : ''}`}>
