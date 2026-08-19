@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../lib/supabaseClient';
+import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
 import { routeNewMember, canActivateMarriageProfile } from '../policies/shariaPolicyEngine';
 import VerseBanner from './VerseBanner';
 
@@ -57,29 +57,46 @@ export default function OnboardingWizard() {
     setSubmitting(true);
     setError(null);
     try {
-      // 1) التوجيه الذكي وفق القواعد الصريحة (لا يوجد اجتهاد آلي في العقيدة)
+      // 1) التوجيه الذكي وفق القواعد الصريحة (لا يوجد اجتهاد آلي في العقيدة) — يعمل دومًا حتى بلا خادم
       const route = routeNewMember(data);
       setResult(route);
 
-      // 2) إنشاء الحساب في Supabase (يتطلب مفاتيح بيئة حقيقية عند التشغيل الفعلي)
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: data.email,
-        password: data.password,
-      });
-      if (authError) throw authError;
-
-      const userId = authData?.user?.id;
-      if (userId) {
-        await supabase.from('profiles').insert({
-          id: userId,
-          full_name: data.full_name,
-          country: data.country,
-          language: data.language,
-          gender: data.gender,
-        });
+      // 2) إن كان Supabase غير مُهيّأ بعد (لا مفاتيح بيئة)، لا نحاول الاتصال بالخادم إطلاقًا —
+      // نكتفي بعرض نتيجة التوجيه فورًا حتى تبقى الواجهة كاملة وواضحة دون أي شاشة بيضاء أو تعليق.
+      if (!isSupabaseConfigured) {
+        route.marriageNotice = [
+          'ملاحظة: التسجيل الفعلي غير مُفعَّل بعد على هذه النسخة (بانتظار ربط مفاتيح Supabase من المشرف).',
+        ];
+        setSubmitting(false);
+        return;
       }
 
-      // 3) إن كان مهتمًا بالزواج، نتحقق فورًا من شرط الولي قبل عرض الوحدة
+      // 3) إنشاء الحساب في Supabase (يعمل فقط بعد إضافة مفاتيح بيئة حقيقية)
+      try {
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+          email: data.email,
+          password: data.password,
+        });
+        if (authError) throw authError;
+
+        const userId = authData?.user?.id;
+        if (userId) {
+          const { error: insertError } = await supabase.from('profiles').insert({
+            id: userId,
+            full_name: data.full_name,
+            country: data.country,
+            language: data.language,
+            gender: data.gender,
+          });
+          if (insertError) console.error('[Al-Salaf Connect] تعذّر حفظ الملف الشخصي:', insertError);
+        }
+      } catch (dbErr) {
+        // لا نُسقط تجربة المستخدم بسبب فشل اتصال بالخادم — نعرض تحذيرًا ونكمل عرض النتيجة محليًا.
+        console.error('[Al-Salaf Connect] تعذّر إتمام التسجيل عبر Supabase:', dbErr);
+        setError('تعذّر الاتصال بالخادم حاليًا. تم حفظ توجيهك محليًا، حاول التسجيل الفعلي لاحقًا.');
+      }
+
+      // 4) إن كان مهتمًا بالزواج، نتحقق فورًا من شرط الولي قبل عرض الوحدة
       if (data.interests.includes('marriage')) {
         const check = canActivateMarriageProfile({ guardian_id: null, bio_text: '' });
         if (!check.allowed) {
@@ -89,7 +106,9 @@ export default function OnboardingWizard() {
 
       navigate(`/${route.landingPage.replace(/_.*/, '')}`, { state: { route } });
     } catch (err) {
-      setError(err.message || 'تعذّر إتمام التسجيل. تحقق من إعداد Supabase في ملف .env');
+      // شبكة أمان أخيرة تضمن ظهور رسالة مفهومة دومًا بدل شاشة بيضاء أو تجمّد الواجهة.
+      console.error('[Al-Salaf Connect] خطأ غير متوقع في التسجيل:', err);
+      setError(err?.message || 'حدث خطأ غير متوقع. حاول مرة أخرى.');
     } finally {
       setSubmitting(false);
     }
@@ -98,6 +117,12 @@ export default function OnboardingWizard() {
   return (
     <div className="max-w-lg mx-auto px-6 py-10">
       <VerseBanner contextKey="onboarding_start" />
+
+      {!isSupabaseConfigured && (
+        <div className="mt-6 text-sm bg-maroon/10 border border-maroon/30 text-maroon rounded p-4 text-center">
+          وضع المعاينة: التسجيل الفعلي غير مُفعَّل بعد على هذه النسخة (بانتظار ربط مفاتيح Supabase من المشرف). يمكنك تجربة خطوات التوجيه الذكي بأمان.
+        </div>
+      )}
 
       <div className="mt-10 bg-white/50 border border-gold/30 rounded p-8">
         <div className="font-mono text-xs text-maroon mb-6">
