@@ -1,22 +1,17 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
+import { signUpLocal, saveAdaptiveResult } from '../lib/localBackend';
 import { routeNewMember, canActivateMarriageProfile } from '../policies/shariaPolicyEngine';
+import { DIAGNOSTIC_QUESTIONS, scoreDiagnostic } from '../data/adaptiveQuiz';
 import VerseBanner from './VerseBanner';
 
-const STEPS = ['identity', 'origin', 'knowledge', 'interests', 'confirm'];
+const STEPS = ['identity', 'origin', 'diagnostic', 'interests', 'confirm'];
 
 const LANGUAGES = [
   { code: 'ar', label: 'العربية' },
   { code: 'en', label: 'English' },
   { code: 'fr', label: 'Français' },
   { code: 'no', label: 'Norsk' },
-];
-
-const KNOWLEDGE_LEVELS = [
-  { code: 'beginner', label: 'جديد على طلب العلم' },
-  { code: 'student', label: 'طالب علم منتظم' },
-  { code: 'scholar_track', label: 'داعية / معلّم' },
 ];
 
 const INTERESTS = [
@@ -33,12 +28,11 @@ export default function OnboardingWizard() {
     gender: '',
     country: '',
     language: 'ar',
-    knowledgeLevel: 'beginner',
     interests: [],
   });
+  const [quizAnswers, setQuizAnswers] = useState({});
   const [result, setResult] = useState(null);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState(null);
   const navigate = useNavigate();
 
   const step = STEPS[stepIndex];
@@ -50,79 +44,51 @@ export default function OnboardingWizard() {
     }));
   };
 
+  const answerQuiz = (questionId, optionId) => {
+    setQuizAnswers((a) => ({ ...a, [questionId]: optionId }));
+  };
+
   const next = () => setStepIndex((i) => Math.min(i + 1, STEPS.length - 1));
   const back = () => setStepIndex((i) => Math.max(i - 1, 0));
 
-  const submit = async () => {
+  const submit = () => {
     setSubmitting(true);
-    setError(null);
-    try {
-      // 1) التوجيه الذكي وفق القواعد الصريحة (لا يوجد اجتهاد آلي في العقيدة) — يعمل دومًا حتى بلا خادم
-      const route = routeNewMember(data);
-      setResult(route);
 
-      // 2) إن كان Supabase غير مُهيّأ بعد (لا مفاتيح بيئة)، لا نحاول الاتصال بالخادم إطلاقًا —
-      // نكتفي بعرض نتيجة التوجيه فورًا حتى تبقى الواجهة كاملة وواضحة دون أي شاشة بيضاء أو تعليق.
-      if (!isSupabaseConfigured) {
-        route.marriageNotice = [
-          'ملاحظة: التسجيل الفعلي غير مُفعَّل بعد على هذه النسخة (بانتظار ربط مفاتيح Supabase من المشرف).',
-        ];
-        setSubmitting(false);
-        return;
+    // 1) تشخيص المسار العلمي التكيفي — نتيجة فعلية من الإجابات، لا تخمين ذاتي
+    const diagnostic = scoreDiagnostic(quizAnswers);
+    saveAdaptiveResult(diagnostic);
+
+    // 2) التوجيه الذكي وفق القواعد الصريحة (لا يوجد اجتهاد آلي في العقيدة)
+    const route = routeNewMember({ ...data, knowledgeLevel: diagnostic.level });
+    route.suggestedTracks = [...new Set([...diagnostic.recommendedTracks, ...route.suggestedTracks])];
+    route.diagnostic = diagnostic;
+    setResult(route);
+
+    // 3) حفظ التسجيل محليًا بالكامل — يعمل دومًا، فورًا، بلا اتصال خادم ولا رسائل خطأ
+    signUpLocal({
+      email: data.email,
+      password: data.password,
+      full_name: data.full_name,
+      country: data.country,
+      language: data.language,
+      gender: data.gender,
+    });
+
+    // 4) إن كان مهتمًا بالزواج، نتحقق فورًا من شرط الولي قبل عرض الوحدة
+    if (data.interests.includes('marriage')) {
+      const check = canActivateMarriageProfile({ guardian_id: null, bio_text: '' });
+      if (!check.allowed) {
+        route.marriageNotice = check.errors;
       }
-
-      // 3) إنشاء الحساب في Supabase (يعمل فقط بعد إضافة مفاتيح بيئة حقيقية)
-      try {
-        const { data: authData, error: authError } = await supabase.auth.signUp({
-          email: data.email,
-          password: data.password,
-        });
-        if (authError) throw authError;
-
-        const userId = authData?.user?.id;
-        if (userId) {
-          const { error: insertError } = await supabase.from('profiles').insert({
-            id: userId,
-            full_name: data.full_name,
-            country: data.country,
-            language: data.language,
-            gender: data.gender,
-          });
-          if (insertError) console.error('[Al-Salaf Connect] تعذّر حفظ الملف الشخصي:', insertError);
-        }
-      } catch (dbErr) {
-        // لا نُسقط تجربة المستخدم بسبب فشل اتصال بالخادم — نعرض تحذيرًا ونكمل عرض النتيجة محليًا.
-        console.error('[Al-Salaf Connect] تعذّر إتمام التسجيل عبر Supabase:', dbErr);
-        setError('تعذّر الاتصال بالخادم حاليًا. تم حفظ توجيهك محليًا، حاول التسجيل الفعلي لاحقًا.');
-      }
-
-      // 4) إن كان مهتمًا بالزواج، نتحقق فورًا من شرط الولي قبل عرض الوحدة
-      if (data.interests.includes('marriage')) {
-        const check = canActivateMarriageProfile({ guardian_id: null, bio_text: '' });
-        if (!check.allowed) {
-          route.marriageNotice = check.errors;
-        }
-      }
-
-      navigate(`/${route.landingPage.replace(/_.*/, '')}`, { state: { route } });
-    } catch (err) {
-      // شبكة أمان أخيرة تضمن ظهور رسالة مفهومة دومًا بدل شاشة بيضاء أو تجمّد الواجهة.
-      console.error('[Al-Salaf Connect] خطأ غير متوقع في التسجيل:', err);
-      setError(err?.message || 'حدث خطأ غير متوقع. حاول مرة أخرى.');
-    } finally {
-      setSubmitting(false);
     }
+
+    setSubmitting(false);
+    navigate(`/${route.landingPage.replace(/_.*/, '')}`, { state: { route } });
   };
 
   return (
     <div className="max-w-lg mx-auto px-6 py-10">
       <VerseBanner contextKey="onboarding_start" />
-
-      {!isSupabaseConfigured && (
-        <div className="mt-6 text-sm bg-maroon/10 border border-maroon/30 text-maroon rounded p-4 text-center">
-          وضع المعاينة: التسجيل الفعلي غير مُفعَّل بعد على هذه النسخة (بانتظار ربط مفاتيح Supabase من المشرف). يمكنك تجربة خطوات التوجيه الذكي بأمان.
-        </div>
-      )}
 
       <div className="mt-10 bg-white/50 border border-gold/30 rounded p-8">
         <div className="font-mono text-xs text-maroon mb-6">
@@ -179,19 +145,33 @@ export default function OnboardingWizard() {
           </div>
         )}
 
-        {step === 'knowledge' && (
-          <div className="space-y-4">
-            <h3 className="font-display text-xl text-emeraldDeep">مستواك العلمي</h3>
-            {KNOWLEDGE_LEVELS.map((k) => (
-              <button
-                key={k.code}
-                onClick={() => setData({ ...data, knowledgeLevel: k.code })}
-                className={`w-full text-right py-3 px-4 rounded border ${
-                  data.knowledgeLevel === k.code ? 'bg-gold border-gold text-emeraldDeep' : 'border-gold/40'
-                }`}
-              >
-                {k.label}
-              </button>
+        {step === 'diagnostic' && (
+          <div className="space-y-6">
+            <div>
+              <h3 className="font-display text-xl text-emeraldDeep mb-1">المسار العلمي التكيفي</h3>
+              <p className="text-xs text-ink/50">
+                5 أسئلة قصيرة تحدد مستواك الفعلي بدقة، ليوجّهك النظام لمسار مناسب — لا يوجد إجابات "خطأ" تُحرجك، فقط تشخيص لطيف.
+              </p>
+            </div>
+            {DIAGNOSTIC_QUESTIONS.map((q, qi) => (
+              <div key={q.id}>
+                <p className="text-sm font-medium text-emeraldDeep mb-2">
+                  {qi + 1}. {q.prompt}
+                </p>
+                <div className="grid grid-cols-1 gap-2">
+                  {q.options.map((opt) => (
+                    <button
+                      key={opt.id}
+                      onClick={() => answerQuiz(q.id, opt.id)}
+                      className={`text-right text-sm py-2 px-3 rounded border ${
+                        quizAnswers[q.id] === opt.id ? 'bg-gold border-gold text-emeraldDeep' : 'border-gold/30'
+                      }`}
+                    >
+                      {opt.text}
+                    </button>
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
         )}
@@ -217,7 +197,7 @@ export default function OnboardingWizard() {
           <div className="space-y-4">
             <h3 className="font-display text-xl text-emeraldDeep">تأكيد التسجيل</h3>
             <p className="text-sm text-ink/70 leading-relaxed">
-              سنوجّهك تلقائيًا إلى المسارات الأنسب بحسب بياناتك أعلاه. يمكنك تعديل اهتماماتك لاحقًا من إعدادات الحساب.
+              سنوجّهك تلقائيًا إلى المسارات الأنسب بحسب بياناتك ونتيجة التشخيص أعلاه. يمكنك تعديل اهتماماتك لاحقًا.
             </p>
             <input
               type="email"
@@ -233,7 +213,6 @@ export default function OnboardingWizard() {
               value={data.password || ''}
               onChange={(e) => setData({ ...data, password: e.target.value })}
             />
-            {error && <p className="text-maroon text-sm">{error}</p>}
           </div>
         )}
 
@@ -263,11 +242,23 @@ export default function OnboardingWizard() {
       </div>
 
       {result && (
-        <div className="mt-6 text-sm text-emeraldDeep bg-gold/10 border border-gold/30 rounded p-4">
-          تم توجيهك بحسب بياناتك إلى: <b>{result.suggestedTracks.join('، ') || 'الصفحة الرئيسية'}</b>
-          {result.marriageNotice && (
-            <p className="text-maroon mt-2">{result.marriageNotice.join(' ')}</p>
+        <div className="mt-6 text-sm text-emeraldDeep bg-gold/10 border border-gold/30 rounded p-5 space-y-2">
+          <p>
+            نتيجة التشخيص: <b>{result.diagnostic.correctCount} / {result.diagnostic.total}</b> —
+            المستوى المكتشَف: <b>
+              {{ beginner: 'مبتدئ', intermediate: 'متوسط', advanced: 'متقدم' }[result.diagnostic.level]}
+            </b>
+          </p>
+          {result.diagnostic.gapLabels.length > 0 && (
+            <p className="text-maroon">
+              نقاط تحتاج تركيزًا: {result.diagnostic.gapLabels.join('، ')}
+            </p>
           )}
+          <p>
+            مسارك الموصى به: <b>{result.suggestedTracks.join('، ') || 'الصفحة الرئيسية'}</b>
+          </p>
+          <p className="text-emeraldDeep/70">تم إنشاء حسابك وحفظ بياناتك بنجاح في هذا المتصفح.</p>
+          {result.marriageNotice && <p className="text-maroon mt-2">{result.marriageNotice.join(' ')}</p>}
         </div>
       )}
     </div>
