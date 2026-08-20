@@ -8,7 +8,7 @@ const PILLARS = [
 
 export default function Aqeedah() {
   return (
-    <div className="px-[6vw] py-16">
+    <div className="px-[6vw] py-16 oil-bg oil-aqeedah">
       <VerseBanner contextKey="aqeedah" />
       <h2 className="font-display text-3xl text-emeraldDeep mt-10 mb-8">ثلاثة أصول تُبنى عليها المنصة</h2>
       <div className="grid md:grid-cols-3 gap-px bg-gold/20 border border-gold/20">
