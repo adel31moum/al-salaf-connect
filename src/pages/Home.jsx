@@ -4,7 +4,7 @@ import VerseBanner from '../components/VerseBanner';
 export default function Home() {
   return (
     <div>
-      <section className="relative min-h-[80vh] bg-emeraldDeep text-parchment px-[6vw] py-24 grid md:grid-cols-2 gap-10 items-center overflow-hidden">
+      <section className="relative min-h-[80vh] bg-emeraldDeep text-parchment px-[6vw] py-24 grid md:grid-cols-2 gap-10 items-center overflow-hidden oil-bg oil-home">
         <div className="star-field absolute inset-0 opacity-10 pointer-events-none" />
         <div>
           <span className="font-mono text-xs tracking-[3px] text-goldSoft uppercase">
