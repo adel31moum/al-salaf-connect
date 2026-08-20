@@ -69,12 +69,12 @@ export function routeNewMember(registration) {
   // التوجيه اللغوي أولًا
   if (!['ar', 'en', 'fr', 'no'].includes(route.locale)) route.locale = 'en';
 
-  // التوجيه حسب مستوى العلم
+  // التوجيه حسب مستوى العلم (يقبل تسميات كل من الاستبيان الذاتي والتشخيص التكيفي)
   if (knowledgeLevel === 'beginner') {
     route.suggestedTracks.push('aqeedah_basics', 'dawah_faq');
-  } else if (knowledgeLevel === 'student') {
+  } else if (knowledgeLevel === 'student' || knowledgeLevel === 'intermediate') {
     route.suggestedTracks.push('majalis_advanced', 'fiqh_seminars');
-  } else if (knowledgeLevel === 'scholar_track') {
+  } else if (knowledgeLevel === 'scholar_track' || knowledgeLevel === 'advanced') {
     route.suggestedTracks.push('scholar_verification_form');
   }
 
