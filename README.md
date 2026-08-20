@@ -1,62 +1,50 @@
 # ملتقى السلف — Al-Salaf Connect
 
-تطبيق React + Vite + Tailwind متصل بـ Supabase، مع توجيه تسجيل ذكي، ومحرك سياسات شرعية،
-ومساعد دعوة آلي متعدد اللغات.
+تطبيق React + Vite + Tailwind. **يعمل بشكل كامل مباشرة دون أي إعداد خارجي** — التسجيل،
+الجلسات، والمسار العلمي التكيفي كلها محفوظة محليًا في متصفح الزائر (`localStorage`).
+Supabase والذكاء الاصطناعي الحقيقي **اختياريان**، لمن أراد ترقية المنصة لاحقًا لخادم فعلي.
 
-## ⚠️ نقطة مهمة وصريحة
-لا أستطيع أنا (Claude) رفع هذا الكود إلى حساب GitHub خاص بك تلقائيًا — لا أملك بيانات اعتماد حسابك،
-ولن أطلبها منك في المحادثة لأسباب أمنية. لكن كل شيء أدناه **جاهز للتنفيذ خلال 10 دقائق فعليًا**
-بنسخ ولصق الأوامر، دون أي تعديل إضافي مطلوب منك على الكود.
+## الحالة الحالية (وضع محلي كامل)
+- ✅ التسجيل بخطواته الخمس، بما فيها اختبار المسار العلمي التكيفي (5 أسئلة تشخيصية حقيقية).
+- ✅ الجلسة تُحفظ محليًا — الهيدر يعرض اسم العضو المسجَّل دخوله وزر خروج.
+- ✅ مساعد الدعوة يردّ فورًا بردود محلية جاهزة (بلا اتصال خادم).
+- ✅ خلفيات "زيتية" مخصصة لكل صفحة (CSS + SVG filter، بدون أي صور خارجية).
+- ✅ صفحة الزواج بهوية "ميثاق شرعي رسمي" منفصلة تمامًا عن أي طابع تعارف عام.
+- ⬜ لا يوجد بعد: تخزين مركزي متعدد الأجهزة، مساعد دعوة مدعوم فعليًا بذكاء اصطناعي حقيقي،
+  تحقق فعلي من هوية الأولياء. هذه تتطلب خادمًا حقيقيًا (انظر أدناه).
 
-## 1) التشغيل محليًا
+## التشغيل محليًا
 ```bash
 npm install
-cp .env.example .env
-# افتح .env وضع فيه مفاتيح مشروع Supabase الخاص بك
 npm run dev
 ```
+لا حاجة لأي ملف `.env` للتشغيل الأساسي — التطبيق يعمل فورًا.
 
-## 2) إعداد قاعدة البيانات
-1. أنشئ مشروعًا مجانيًا على https://supabase.com
-2. من لوحة SQL Editor، الصق محتوى الملف `supabase/schema.sql` ونفّذه.
-3. انسخ `Project URL` و `anon public key` إلى ملف `.env`.
+## النشر على Netlify
+المستودع يحتوي `netlify.toml` جاهزًا. من app.netlify.com: **Add new site → Import from GitHub**
+→ اختر هذا المستودع → Deploy. لا حاجة لأي متغيرات بيئة في هذه المرحلة.
 
-## 3) نشر مساعد الدعوة الذكي (Edge Function)
-```bash
-npx supabase login
-npx supabase link --project-ref <YOUR_PROJECT_REF>
-npx supabase secrets set ANTHROPIC_API_KEY=sk-ant-xxxxxxxx
-npx supabase functions deploy dawah-ai
-```
+## الترقية لاحقًا إلى خادم حقيقي (اختياري)
+إن أردت مستقبلًا: تخزينًا مركزيًا فعليًا، مساعد دعوة مدعومًا بذكاء اصطناعي حقيقي، وتحققًا فعليًا
+من هوية الأولياء عبر قاعدة بيانات مركزية — الأساس جاهز في المستودع:
+- `supabase/schema.sql` و `supabase/schema_v2_additions.sql` — مخطط قاعدة بيانات كامل بقواعد RLS.
+- `supabase/functions/dawah-ai/index.ts` — Edge Function لمساعد دعوة حقيقي مدعوم بـAnthropic API.
+- `src/lib/supabaseClient.js` — عميل جاهز، غير مستخدَم حاليًا في أي صفحة.
 
-## 4) رفع المشروع إلى GitHub (نفّذها أنت من جهازك)
-```bash
-git init
-git add .
-git commit -m "Al-Salaf Connect v1"
-git branch -M main
-git remote add origin https://github.com/<YOUR_USERNAME>/al-salaf-connect.git
-git push -u origin main
-```
-
-## 5) تفعيل النشر التلقائي (GitHub Pages)
-1. في مستودعك على GitHub: Settings → Pages → Source = "GitHub Actions".
-2. في Settings → Secrets and variables → Actions، أضف:
-   - `VITE_SUPABASE_URL`
-   - `VITE_SUPABASE_ANON_KEY`
-3. أي `git push` جديد إلى `main` سيُبني وينشر الموقع تلقائيًا عبر
-   `.github/workflows/deploy.yml` المرفق — هذا هو "الربط بجيتهاب" الذي طلبته:
-   بعد الإعداد الأولي هذا، لن تحتاج للعودة لأي أحد؛ كل تحديث كود يُنشر نفسه تلقائيًا.
+للتفعيل: أنشئ مشروع Supabase، نفّذ ملفات الـSQL، انشر الـEdge Function، أضف
+`VITE_SUPABASE_URL` و `VITE_SUPABASE_ANON_KEY` في متغيرات بيئة Netlify، ثم استبدل
+الاستدعاءات المحلية في `OnboardingWizard.jsx` و `Dawah.jsx` باستدعاءات `supabase` الفعلية
+(الكود القديم متوفر في تاريخ الـcommits لو أردت الرجوع إليه كمرجع).
 
 ## بنية المشروع
 ```
 src/
-  policies/shariaPolicyEngine.js   ← "المدير الآلي": ينفّذ قواعد صريحة أقرّتها الهيئة الشرعية
-  data/versesHadith.js             ← آيات/أحاديث سياقية لكل صفحة
-  components/OnboardingWizard.jsx  ← التسجيل التوجيهي الذكي
-  components/VerseBanner.jsx       ← عرض الآية/الحديث في كل نافذة
+  data/adaptiveQuiz.js             ← أسئلة وتقييم المسار العلمي التكيفي
+  lib/localBackend.js              ← "الخادم" المحلي الحالي (localStorage)
+  lib/supabaseClient.js            ← جاهز لكن غير مفعَّل — للترقية المستقبلية
+  policies/shariaPolicyEngine.js   ← قواعد التوجيه والمنع الصريحة
+  components/MarriageSeal.jsx      ← الختم الهندسي لصفحة الزواج
+  components/OilGrainFilter.jsx    ← فلتر الخلفيات الزيتية
   pages/                           ← الصفحات الرئيسية
-supabase/
-  schema.sql                       ← قاعدة البيانات + RLS
-  functions/dawah-ai/index.ts      ← مساعد الدعوة (Edge Function)
+supabase/                          ← جاهز للترقية المستقبلية (غير مستخدَم حاليًا)
 ```
