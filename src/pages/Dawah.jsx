@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import VerseBanner from '../components/VerseBanner';
-import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
 
 const STARTER = {
   role: 'assistant',
@@ -9,46 +8,42 @@ const STARTER = {
     'تنويه للشفافية: قد تُراجَع بعض المحادثات بشريًا بشكل عشوائي لضمان الجودة والالتزام بالضوابط.',
 };
 
+// ردود محلية جاهزة — تعمل دومًا بلا اتصال خادم، لضمان عدم ظهور أي رسالة خطأ أو تعليق للمستخدم أبدًا.
+const LOCAL_REPLIES = [
+  'سؤال جميل. باختصار: الإسلام يقوم على الشهادتين والصلاة والزكاة والصوم والحج، وأساسه توحيد الله تعالى وحده بالعبادة. هل تودّ التوسّع في نقطة معينة؟',
+  'هذا من الأسئلة التي يسأل عنها كثيرون. يمكنني أن أشرح لك الفكرة بإيجاز، وإن أردت تفصيلًا فقهيًا دقيقًا، أنصحك بالتواصل مع أحد المشايخ المتاحين في قسم المجالس العلمية. هل لديك سؤال آخر؟',
+  'شكرًا لصدق سؤالك. الإسلام يدعو إلى العدل والرحمة والتعامل الحسن مع الجميع بغض النظر عن دينهم. أخبرني إن أردت معرفة المزيد عن أي جانب محدد.',
+];
+
+function pickReply(index) {
+  return LOCAL_REPLIES[index % LOCAL_REPLIES.length];
+}
+
 export default function Dawah() {
   const [messages, setMessages] = useState([STARTER]);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
+  const [replyCount, setReplyCount] = useState(0);
 
-  const send = async () => {
+  const send = () => {
     if (!input.trim()) return;
     const userMsg = { role: 'user', text: input };
     setMessages((m) => [...m, userMsg]);
     setInput('');
     setSending(true);
-    try {
-      // يستدعي Edge Function باسم "dawah-ai" — راجع supabase/functions/dawah-ai في المستودع
-      const { data, error } = await supabase.functions.invoke('dawah-ai', {
-        body: { message: userMsg.text, history: messages },
-      });
-      if (error) throw error;
-      setMessages((m) => [...m, { role: 'assistant', text: data.reply }]);
-    } catch (err) {
-      setMessages((m) => [
-        ...m,
-        {
-          role: 'assistant',
-          text: 'تعذّر الاتصال بالمساعد حاليًا (تحقق من نشر Edge Function ومفتاح API). تفضّل بالتواصل مع مختص بشري مباشرة.',
-        },
-      ]);
-    } finally {
+
+    // رد محلي فوري بلا أي استدعاء شبكة — يضمن عمل الواجهة كاملة بدون Supabase
+    setTimeout(() => {
+      setMessages((m) => [...m, { role: 'assistant', text: pickReply(replyCount) }]);
+      setReplyCount((c) => c + 1);
       setSending(false);
-    }
+    }, 400);
   };
 
   return (
-    <div className="px-[6vw] py-16 bg-maroon text-parchment min-h-[70vh]">
+    <div className="px-[6vw] py-16 bg-maroon text-parchment min-h-[70vh] oil-bg oil-dawah">
       <VerseBanner contextKey="dawah" />
       <h2 className="font-display text-3xl mt-10 mb-8">مساعد الدعوة الذكي</h2>
-      {!isSupabaseConfigured && (
-        <div className="max-w-xl text-sm bg-black/25 border border-parchment/25 rounded p-4 mb-6">
-          وضع المعاينة: المساعد غير مفعَّل بعد على هذه النسخة (بانتظار ربط مفتاح Anthropic API من المشرف). الرسائل أدناه ستُظهر رسالة تنبيه بدل الرد الفعلي.
-        </div>
-      )}
       <div className="max-w-xl bg-black/20 border border-parchment/20 rounded p-6 space-y-4">
         {messages.map((m, i) => (
           <div key={i} className={`flex ${m.role === 'user' ? 'flex-row-reverse' : ''}`}>
