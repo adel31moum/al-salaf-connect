@@ -14,6 +14,8 @@ const KEYS = {
   profiles: 'asc_profiles',
   session: 'asc_session',
   adaptive: 'asc_adaptive_results',
+  marriageProfiles: 'asc_marriage_profiles',
+  compatRequests: 'asc_compat_requests',
 };
 
 // مخزن احتياطي في الذاكرة يُستخدم تلقائيًا إن تعذّر الوصول إلى localStorage
@@ -100,4 +102,31 @@ export function getAdaptiveResult() {
   const userId = session?.userId || 'anonymous';
   const all = safeGet(KEYS.adaptive, {});
   return all[userId] || null;
+}
+
+/* ==================== وحدة الزواج: ملفات محلية وطلبات توافق ==================== */
+
+export function saveMarriageProfile(profile) {
+  const all = safeGet(KEYS.marriageProfiles, {});
+  const id = profile.id || 'mp_' + Math.random().toString(36).slice(2, 10);
+  all[id] = { ...profile, id, created_at: new Date().toISOString() };
+  safeSet(KEYS.marriageProfiles, all);
+  return all[id];
+}
+
+export function listUserMarriageProfiles() {
+  const all = safeGet(KEYS.marriageProfiles, {});
+  return Object.values(all);
+}
+
+export function saveCompatibilityRequest(request) {
+  const all = safeGet(KEYS.compatRequests, []);
+  const entry = { ...request, id: 'req_' + Date.now().toString(36), created_at: new Date().toISOString() };
+  all.push(entry);
+  safeSet(KEYS.compatRequests, all);
+  return entry;
+}
+
+export function listCompatibilityRequests() {
+  return safeGet(KEYS.compatRequests, []);
 }
