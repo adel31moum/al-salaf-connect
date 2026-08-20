@@ -1,6 +1,6 @@
 export default function Privacy() {
   return (
-    <div className="px-[6vw] py-16 max-w-2xl mx-auto">
+    <div className="px-[6vw] py-16 max-w-2xl mx-auto oil-bg oil-privacy">
       <h2 className="font-display text-3xl text-emeraldDeep mb-6">سياسة الخصوصية</h2>
       <div className="space-y-5 text-sm text-ink/70 leading-relaxed">
         <p>
