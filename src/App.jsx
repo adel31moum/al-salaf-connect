@@ -3,6 +3,7 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import Signature from './components/Signature';
 import ErrorBoundary from './components/ErrorBoundary';
+import OilGrainFilter from './components/OilGrainFilter';
 import { LanguageProvider } from './context/LanguageContext';
 import Home from './pages/Home';
 import Aqeedah from './pages/Aqeedah';
@@ -16,6 +17,7 @@ export default function App() {
   return (
     <ErrorBoundary>
       <LanguageProvider>
+        <OilGrainFilter />
         <div className="min-h-screen flex flex-col">
           <Header />
           <main className="flex-1">
