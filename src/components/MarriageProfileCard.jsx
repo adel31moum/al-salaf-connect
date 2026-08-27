@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import GenderGlyph from './GenderGlyph';
-import { saveCompatibilityRequest, getCurrentProfile } from '../lib/localBackend';
+import { saveCompatibilityRequest, getCurrentProfile } from '../lib/backend';
 import { estimateCompatibility } from '../lib/compatibility';
 
 const REVEAL_SECONDS = 5;
@@ -28,11 +28,11 @@ export default function MarriageProfileCard({ profile }) {
 
   const skipReveal = () => setRevealState('open');
 
-  const requestCompatibility = () => {
+  const requestCompatibility = async () => {
     const me = getCurrentProfile() || {};
     const s = estimateCompatibility(me, profile);
     setScore(s);
-    saveCompatibilityRequest({
+    await saveCompatibilityRequest({
       requesterId: me.id || 'زائر',
       targetProfileId: profile.id,
       targetKunya: profile.kunya,
