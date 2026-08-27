@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { signUpLocal, saveAdaptiveResult } from '../lib/localBackend';
+import { signUp, saveAdaptiveResult, resetPassword, isSupabaseConfigured } from '../lib/backend';
 import { routeNewMember, canActivateMarriageProfile } from '../policies/shariaPolicyEngine';
 import { DIAGNOSTIC_QUESTIONS, scoreDiagnostic } from '../data/adaptiveQuiz';
 import VerseBanner from './VerseBanner';
@@ -51,7 +51,7 @@ export default function OnboardingWizard() {
   const next = () => setStepIndex((i) => Math.min(i + 1, STEPS.length - 1));
   const back = () => setStepIndex((i) => Math.max(i - 1, 0));
 
-  const submit = () => {
+  const submit = async () => {
     setSubmitting(true);
 
     // 1) تشخيص المسار العلمي التكيفي — نتيجة فعلية من الإجابات، لا تخمين ذاتي
@@ -64,8 +64,9 @@ export default function OnboardingWizard() {
     route.diagnostic = diagnostic;
     setResult(route);
 
-    // 3) حفظ التسجيل محليًا بالكامل — يعمل دومًا، فورًا، بلا اتصال خادم ولا رسائل خطأ
-    signUpLocal({
+    // 3) التسجيل: يحاول الاتصال الحقيقي بـSupabase أولًا، ويتراجع للتخزين المحلي تلقائيًا
+    // عند أي عائق (مثل عدم تنفيذ schema.sql بعد) — بلا أي رسالة خطأ للمستخدم في الحالتين.
+    await signUp({
       email: data.email,
       password: data.password,
       full_name: data.full_name,
@@ -213,6 +214,7 @@ export default function OnboardingWizard() {
               value={data.password || ''}
               onChange={(e) => setData({ ...data, password: e.target.value })}
             />
+            <ForgotPasswordLink email={data.email} />
           </div>
         )}
 
@@ -264,3 +266,36 @@ export default function OnboardingWizard() {
     </div>
   );
 }
+
+function ForgotPasswordLink({ email }) {
+  const [status, setStatus] = useState('idle'); // idle | sending | sent | unavailable
+
+  const handleClick = async () => {
+    if (!email) {
+      setStatus('needs-email');
+      return;
+    }
+    if (!isSupabaseConfigured) {
+      setStatus('unavailable');
+      return;
+    }
+    setStatus('sending');
+    const result = await resetPassword(email);
+    setStatus(result.ok ? 'sent' : 'unavailable');
+  };
+
+  return (
+    <div className="text-xs">
+      <button type="button" onClick={handleClick} className="text-maroon underline">
+        نسيت كلمة المرور؟
+      </button>
+      {status === 'needs-email' && <p className="text-maroon mt-1">أدخل بريدك الإلكتروني أعلاه أولًا.</p>}
+      {status === 'sending' && <p className="text-ink/50 mt-1">جارٍ الإرسال...</p>}
+      {status === 'sent' && <p className="text-emeraldDeep mt-1">✅ أُرسل رابط استعادة كلمة المرور إلى بريدك.</p>}
+      {status === 'unavailable' && (
+        <p className="text-ink/50 mt-1">هذه الخاصية تتطلب اتصالًا فعليًا بالخادم — جرّب لاحقًا أو تواصل مع الإدارة.</p>
+      )}
+    </div>
+  );
+}
+
