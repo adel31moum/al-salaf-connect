@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import VerseBanner from '../components/VerseBanner';
+import { askDawahAI, isSupabaseConfigured } from '../lib/backend';
 
 const STARTER = {
   role: 'assistant',
@@ -8,42 +9,39 @@ const STARTER = {
     'تنويه للشفافية: قد تُراجَع بعض المحادثات بشريًا بشكل عشوائي لضمان الجودة والالتزام بالضوابط.',
 };
 
-// ردود محلية جاهزة — تعمل دومًا بلا اتصال خادم، لضمان عدم ظهور أي رسالة خطأ أو تعليق للمستخدم أبدًا.
-const LOCAL_REPLIES = [
-  'سؤال جميل. باختصار: الإسلام يقوم على الشهادتين والصلاة والزكاة والصوم والحج، وأساسه توحيد الله تعالى وحده بالعبادة. هل تودّ التوسّع في نقطة معينة؟',
-  'هذا من الأسئلة التي يسأل عنها كثيرون. يمكنني أن أشرح لك الفكرة بإيجاز، وإن أردت تفصيلًا فقهيًا دقيقًا، أنصحك بالتواصل مع أحد المشايخ المتاحين في قسم المجالس العلمية. هل لديك سؤال آخر؟',
-  'شكرًا لصدق سؤالك. الإسلام يدعو إلى العدل والرحمة والتعامل الحسن مع الجميع بغض النظر عن دينهم. أخبرني إن أردت معرفة المزيد عن أي جانب محدد.',
-];
-
-function pickReply(index) {
-  return LOCAL_REPLIES[index % LOCAL_REPLIES.length];
-}
-
 export default function Dawah() {
   const [messages, setMessages] = useState([STARTER]);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
-  const [replyCount, setReplyCount] = useState(0);
 
-  const send = () => {
+  const send = async () => {
     if (!input.trim()) return;
     const userMsg = { role: 'user', text: input };
-    setMessages((m) => [...m, userMsg]);
+    const history = [...messages, userMsg];
+    setMessages(history);
     setInput('');
     setSending(true);
 
-    // رد محلي فوري بلا أي استدعاء شبكة — يضمن عمل الواجهة كاملة بدون Supabase
-    setTimeout(() => {
-      setMessages((m) => [...m, { role: 'assistant', text: pickReply(replyCount) }]);
-      setReplyCount((c) => c + 1);
-      setSending(false);
-    }, 400);
+    // الطبقة الهجينة تتولى الأمر بالكامل: ذكاء اصطناعي حقيقي إن كان مفعَّلًا، وإلا رد محلي فوري —
+    // لا حاجة لأي تعديل هنا لاحقًا عند تفعيل Supabase.
+    const { reply } = await askDawahAI(userMsg.text, history);
+    setMessages((m) => [...m, { role: 'assistant', text: reply }]);
+    setSending(false);
   };
 
   return (
     <div className="px-[6vw] py-16 bg-maroon text-parchment min-h-[70vh] oil-bg oil-dawah">
       <VerseBanner contextKey="dawah" />
-      <h2 className="font-display text-3xl mt-10 mb-8">مساعد الدعوة الذكي</h2>
+      <div className="flex items-center gap-3 mt-10 mb-8">
+        <h2 className="font-display text-3xl">مساعد الدعوة الذكي</h2>
+        <span
+          className={`text-[0.65rem] font-mono px-2 py-1 rounded border ${
+            isSupabaseConfigured ? 'border-gold text-goldSoft' : 'border-parchment/30 text-parchment/50'
+          }`}
+        >
+          {isSupabaseConfigured ? 'وضع مباشر (AI حقيقي)' : 'وضع محلي تجريبي'}
+        </span>
+      </div>
       <div className="max-w-xl bg-black/20 border border-parchment/20 rounded p-6 space-y-4">
         {messages.map((m, i) => (
           <div key={i} className={`flex ${m.role === 'user' ? 'flex-row-reverse' : ''}`}>
