@@ -102,3 +102,28 @@ html {
     radial-gradient(ellipse 50% 40% at 20% 10%, rgba(198, 154, 69, 0.1), transparent 60%),
     linear-gradient(180deg, #ede7d6 0%, #e6dfcc 100%);
 }
+
+/* ==================== شارة "دخول قوية" داكنة لرأس صفحة الزواج والعقيدة ==================== */
+/* نمط شبكي هندسي ثماني النجوم — طابع سلفي/مِثاقي قوي ومهيب، بلا أي تصوير آدمي */
+.dark-entry-band {
+  position: relative;
+  isolation: isolate;
+  background:
+    radial-gradient(ellipse 55% 45% at 50% -10%, rgba(198, 154, 69, 0.22), transparent 60%),
+    linear-gradient(180deg, #041712 0%, #06201a 55%, #082821 100%);
+  overflow: hidden;
+}
+.dark-entry-band::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  opacity: 0.16;
+  background-image: repeating-linear-gradient(45deg, transparent 0 26px, rgba(198, 154, 69, 0.5) 26px 27px),
+    repeating-linear-gradient(-45deg, transparent 0 26px, rgba(198, 154, 69, 0.5) 26px 27px);
+  pointer-events: none;
+}
+.dark-entry-band > * {
+  position: relative;
+  z-index: 1;
+}
