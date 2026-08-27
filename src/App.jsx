@@ -12,6 +12,9 @@ import Zawaj from './pages/Zawaj';
 import Dawah from './pages/Dawah';
 import Join from './pages/Join';
 import Privacy from './pages/Privacy';
+import BoardReview from './pages/BoardReview';
+import NewMuslims from './pages/NewMuslims';
+import ChastityLibrary from './pages/ChastityLibrary';
 
 export default function App() {
   return (
@@ -29,6 +32,9 @@ export default function App() {
               <Route path="/dawah" element={<Dawah />} />
               <Route path="/join" element={<Join />} />
               <Route path="/privacy" element={<Privacy />} />
+              <Route path="/board" element={<BoardReview />} />
+              <Route path="/new-muslims" element={<NewMuslims />} />
+              <Route path="/chastity-library" element={<ChastityLibrary />} />
             </Routes>
           </main>
           <Signature />
