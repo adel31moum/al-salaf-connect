@@ -15,10 +15,11 @@ export default function Header() {
           <div className="font-mono text-[0.6rem] tracking-[2px] text-parchment/60">AL-SALAF CONNECT</div>
         </div>
       </Link>
-      <nav className="hidden md:flex gap-7 text-sm text-parchment/85 items-center">
+      <nav className="hidden md:flex gap-6 text-sm text-parchment/85 items-center">
         <Link to="/aqeedah" className="hover:text-goldSoft">العقيدة</Link>
         <Link to="/majalis" className="hover:text-goldSoft">المجالس</Link>
         <Link to="/zawaj" className="hover:text-goldSoft">الزواج الشرعي</Link>
+        <Link to="/new-muslims" className="hover:text-goldSoft">مسلم جديد</Link>
         <Link to="/dawah" className="hover:text-goldSoft">الدعوة</Link>
         {profile ? (
           <div className="flex items-center gap-3">
