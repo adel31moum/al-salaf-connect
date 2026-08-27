@@ -16,6 +16,7 @@ const KEYS = {
   adaptive: 'asc_adaptive_results',
   marriageProfiles: 'asc_marriage_profiles',
   compatRequests: 'asc_compat_requests',
+  guardianEscalations: 'asc_guardian_escalations',
 };
 
 // مخزن احتياطي في الذاكرة يُستخدم تلقائيًا إن تعذّر الوصول إلى localStorage
@@ -44,9 +45,9 @@ function uid() {
 
 /* ==================== التسجيل والجلسة ==================== */
 
-export function signUpLocal({ email, password, full_name, country, language, gender }) {
+export function signUpLocal({ email, password, full_name, country, language, gender, idOverride }) {
   const users = safeGet(KEYS.users, {});
-  const id = uid();
+  const id = idOverride || uid();
 
   // لا نخزّن كلمة المرور كنص صريح حتى في هذا التخزين المحلي — تجزئة بسيطة كافية لغرض المعاينة
   const passwordHash = password ? btoa(unescape(encodeURIComponent(password))).slice(0, 24) : null;
@@ -109,7 +110,17 @@ export function getAdaptiveResult() {
 export function saveMarriageProfile(profile) {
   const all = safeGet(KEYS.marriageProfiles, {});
   const id = profile.id || 'mp_' + Math.random().toString(36).slice(2, 10);
-  all[id] = { ...profile, id, created_at: new Date().toISOString() };
+  // كل ملف جديد يبدأ "قيد المراجعة" وجوبًا — لا يظهر في قائمة الملفات المتاحة للآخرين
+  // إلا بعد موافقة صريحة من الهيئة الشرعية عبر لوحة المراجعة. هذا هو صلب "الجاهزية الشرعية":
+  // ليس نصًا تجميليًا، بل حالة فعلية تُتحقق منها الواجهة قبل عرض أي ملف.
+  const existing = all[id];
+  all[id] = {
+    ...profile,
+    id,
+    guardian_verification_status: existing?.guardian_verification_status || 'pending',
+    created_at: existing?.created_at || new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
   safeSet(KEYS.marriageProfiles, all);
   return all[id];
 }
@@ -117,6 +128,28 @@ export function saveMarriageProfile(profile) {
 export function listUserMarriageProfiles() {
   const all = safeGet(KEYS.marriageProfiles, {});
   return Object.values(all);
+}
+
+// الملفات "المتاحة" فعليًا للتصفح: فقط ما وافقت عليه الهيئة الشرعية — وليس كل ما سُجِّل
+export function listVerifiedMarriageProfiles() {
+  return listUserMarriageProfiles().filter((p) => p.guardian_verification_status === 'verified');
+}
+
+export function listPendingMarriageProfiles() {
+  return listUserMarriageProfiles().filter((p) => p.guardian_verification_status === 'pending');
+}
+
+export function reviewMarriageProfile(id, decision, note) {
+  const all = safeGet(KEYS.marriageProfiles, {});
+  if (!all[id]) return null;
+  all[id] = {
+    ...all[id],
+    guardian_verification_status: decision, // 'verified' | 'rejected'
+    review_note: note || '',
+    reviewed_at: new Date().toISOString(),
+  };
+  safeSet(KEYS.marriageProfiles, all);
+  return all[id];
 }
 
 export function saveCompatibilityRequest(request) {
@@ -129,4 +162,25 @@ export function saveCompatibilityRequest(request) {
 
 export function listCompatibilityRequests() {
   return safeGet(KEYS.compatRequests, []);
+}
+
+/* ==================== تصعيد "لا يوجد ولي" — يذهب لقائمة الهيئة الجماعية، لا لأي فرد ==================== */
+
+export function saveGuardianEscalation(entry) {
+  const all = safeGet(KEYS.guardianEscalations, []);
+  const record = { ...entry, id: 'esc_' + Date.now().toString(36), status: 'open', created_at: new Date().toISOString() };
+  all.push(record);
+  safeSet(KEYS.guardianEscalations, all);
+  return record;
+}
+
+export function listGuardianEscalations() {
+  return safeGet(KEYS.guardianEscalations, []);
+}
+
+export function resolveGuardianEscalation(id, note) {
+  const all = safeGet(KEYS.guardianEscalations, []);
+  const updated = all.map((e) => (e.id === id ? { ...e, status: 'resolved', resolution_note: note || '', resolved_at: new Date().toISOString() } : e));
+  safeSet(KEYS.guardianEscalations, updated);
+  return updated.find((e) => e.id === id);
 }
