@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   listPendingMarriageProfiles,
   reviewMarriageProfile,
@@ -6,7 +6,72 @@ import {
   resolveGuardianEscalation,
 } from '../lib/localBackend';
 
+// ⚠️ حماية مؤقتة على مستوى الواجهة فقط — تمنع الزائر العادي من الوصول العرضي،
+// لكنها ليست حماية حقيقية (أي شخص يقرأ كود JS المبني يمكنه رؤية هذه القيمة).
+// الحماية الحقيقية الوحيدة هي RLS على Supabase بدور shariah_board (موجود جاهزًا
+// في supabase/schema.sql) — فعّلها فور ربط قاعدة بيانات حقيقية.
+// غيّر هذه العبارة السرية الآن قبل مشاركة رابط الموقع مع أي أحد:
+const BOARD_PASSPHRASE = 'salaf-board-review-92x7';
+const SESSION_KEY = 'asc_board_unlocked';
+
+function BoardGate({ onUnlock }) {
+  const [input, setInput] = useState('');
+  const [error, setError] = useState(false);
+
+  const tryUnlock = () => {
+    if (input === BOARD_PASSPHRASE) {
+      try {
+        sessionStorage.setItem(SESSION_KEY, '1');
+      } catch (_e) {
+        /* تجاهل بصمت إن تعذّر — الجلسة ستُطلب مجددًا، وهذا مقبول */
+      }
+      onUnlock();
+    } else {
+      setError(true);
+    }
+  };
+
+  return (
+    <div className="min-h-[60vh] flex items-center justify-center px-6">
+      <div className="max-w-sm w-full covenant-frame bg-parchment/80 p-8 text-center">
+        <h2 className="font-display text-xl text-emeraldDeep mb-2">لوحة الهيئة الشرعية</h2>
+        <p className="text-xs text-ink/50 mb-6">هذه اللوحة مقيَّدة — أدخل العبارة السرية للمتابعة.</p>
+        <input
+          type="password"
+          value={input}
+          onChange={(e) => { setInput(e.target.value); setError(false); }}
+          onKeyDown={(e) => e.key === 'Enter' && tryUnlock()}
+          className="w-full border border-gold/40 rounded px-4 py-3 bg-transparent text-center mb-3"
+          placeholder="العبارة السرية"
+        />
+        {error && <p className="text-maroon text-xs mb-3">عبارة غير صحيحة.</p>}
+        <button onClick={tryUnlock} className="bg-gold text-emeraldDeep px-6 py-2 rounded font-medium w-full">
+          دخول
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function BoardReview() {
+  const [unlocked, setUnlocked] = useState(false);
+
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem(SESSION_KEY) === '1') setUnlocked(true);
+    } catch (_e) {
+      /* لا شيء — تبقى مقفلة، وهذا آمن افتراضيًا */
+    }
+  }, []);
+
+  if (!unlocked) {
+    return <BoardGate onUnlock={() => setUnlocked(true)} />;
+  }
+
+  return <BoardReviewPanel />;
+}
+
+function BoardReviewPanel() {
   const [pending, setPending] = useState(listPendingMarriageProfiles());
   const [escalations, setEscalations] = useState(listGuardianEscalations());
   const [note, setNote] = useState({});
