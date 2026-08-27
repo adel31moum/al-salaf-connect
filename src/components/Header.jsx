@@ -16,6 +16,7 @@ export default function Header() {
         </div>
       </Link>
       <nav className="hidden md:flex gap-6 text-sm text-parchment/85 items-center">
+        <Link to="/about" className="hover:text-goldSoft">من نحن</Link>
         <Link to="/aqeedah" className="hover:text-goldSoft">العقيدة</Link>
         <Link to="/majalis" className="hover:text-goldSoft">المجالس</Link>
         <Link to="/zawaj" className="hover:text-goldSoft">الزواج الشرعي</Link>
