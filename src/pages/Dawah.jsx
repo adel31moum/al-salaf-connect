@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import VerseBanner from '../components/VerseBanner';
 import { askDawahAI, isSupabaseConfigured } from '../lib/backend';
 
@@ -66,6 +67,16 @@ export default function Dawah() {
             {sending ? '...' : 'إرسال'}
           </button>
         </div>
+
+        {/* جسر لطيف وغير ملحّ — يظهر فقط بعد تبادل حقيقي، لا من أول رسالة */}
+        {messages.length >= 4 && (
+          <div className="pt-2 text-xs text-parchment/60 text-center">
+            إن أردت القراءة أكثر بلا أي التزام أو تسجيل:{' '}
+            <Link to="/new-muslims" className="text-goldSoft underline">
+              صفحة مخصصة لمن هم في بداية الطريق
+            </Link>
+          </div>
+        )}
       </div>
     </div>
   );
