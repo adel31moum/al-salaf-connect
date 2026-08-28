@@ -16,6 +16,7 @@ import BoardReview from './pages/BoardReview';
 import NewMuslims from './pages/NewMuslims';
 import ChastityLibrary from './pages/ChastityLibrary';
 import About from './pages/About';
+import Support from './pages/Support';
 
 export default function App() {
   return (
@@ -37,6 +38,7 @@ export default function App() {
               <Route path="/new-muslims" element={<NewMuslims />} />
               <Route path="/chastity-library" element={<ChastityLibrary />} />
               <Route path="/about" element={<About />} />
+              <Route path="/support" element={<Support />} />
             </Routes>
           </main>
           <Signature />
