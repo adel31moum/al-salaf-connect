@@ -7,6 +7,32 @@ import VerseBanner from './VerseBanner';
 
 const STEPS = ['identity', 'origin', 'diagnostic', 'interests', 'confirm'];
 
+// قائمة بيضاء بكل المسارات الفعلية الموجودة في التطبيق — أي وجهة توجيه غير مدرجة هنا
+// تُعاد تلقائيًا للصفحة الرئيسية بدل عرض شاشة بيضاء. هذا يمنع نهائيًا تكرار خلل "التوجيه
+// إلى صفحة غير موجودة" بغضّ النظر عن أي تعديل مستقبلي في shariaPolicyEngine.js أو adaptiveQuiz.js.
+const VALID_LANDING_ROUTES = new Set([
+  '', 'about', 'aqeedah', 'board', 'chastity-library', 'dawah',
+  'join', 'majalis', 'new-muslims', 'privacy', 'support', 'zawaj',
+]);
+
+// خريطة تحويل صريحة لأي مسار "مفاهيمي" لا يطابق اسم صفحة حرفيًا
+const CONCEPTUAL_ROUTE_ALIASES = {
+  scholar_verification_form: 'about', // المتقدّمون عِلميًا يُوجَّهون لصفحة الانضمام للهيئة الشرعية
+  advanced_seminars: 'majalis',
+  aqeedah_basics_intensive: 'aqeedah',
+  manhaj_intro: 'aqeedah',
+  fiqh_seminars: 'majalis',
+  dawah_faq: 'dawah',
+  zawaj_intro: 'zawaj',
+  takaful_fund: 'support',
+};
+
+function resolveSafeLandingPath(landingPage) {
+  if (CONCEPTUAL_ROUTE_ALIASES[landingPage]) return `/${CONCEPTUAL_ROUTE_ALIASES[landingPage]}`;
+  const cleaned = (landingPage || '').replace(/_.*/, '');
+  return VALID_LANDING_ROUTES.has(cleaned) ? `/${cleaned}` : '/';
+}
+
 const LANGUAGES = [
   { code: 'ar', label: 'العربية' },
   { code: 'en', label: 'English' },
@@ -84,7 +110,7 @@ export default function OnboardingWizard() {
     }
 
     setSubmitting(false);
-    navigate(`/${route.landingPage.replace(/_.*/, '')}`, { state: { route } });
+    navigate(resolveSafeLandingPath(route.landingPage), { state: { route } });
   };
 
   return (
@@ -268,20 +294,27 @@ export default function OnboardingWizard() {
 }
 
 function ForgotPasswordLink({ email }) {
-  const [status, setStatus] = useState('idle'); // idle | sending | sent | unavailable
+  const [status, setStatus] = useState('idle'); // idle | sending | sent
+
+  // في الوضع المحلي لا يوجد نظام "تسجيل دخول" يتحقق من كلمة المرور أصلًا —
+  // الجلسة تُحفظ تلقائيًا على هذا الجهاز فور التسجيل. لذلك لا نعرض زرًا يقود لطريق مسدود؛
+  // نشرح الواقع الفعلي بصدق بدل رسالة خطأ محبطة.
+  if (!isSupabaseConfigured) {
+    return (
+      <p className="text-xs text-ink/40 leading-relaxed">
+        ℹ️ جلستك تُحفظ تلقائيًا على هذا الجهاز — لا حاجة لتسجيل دخول منفصل أو كلمة مرور حاليًا.
+      </p>
+    );
+  }
 
   const handleClick = async () => {
     if (!email) {
       setStatus('needs-email');
       return;
     }
-    if (!isSupabaseConfigured) {
-      setStatus('unavailable');
-      return;
-    }
     setStatus('sending');
     const result = await resetPassword(email);
-    setStatus(result.ok ? 'sent' : 'unavailable');
+    setStatus(result.ok ? 'sent' : 'failed');
   };
 
   return (
@@ -292,9 +325,7 @@ function ForgotPasswordLink({ email }) {
       {status === 'needs-email' && <p className="text-maroon mt-1">أدخل بريدك الإلكتروني أعلاه أولًا.</p>}
       {status === 'sending' && <p className="text-ink/50 mt-1">جارٍ الإرسال...</p>}
       {status === 'sent' && <p className="text-emeraldDeep mt-1">✅ أُرسل رابط استعادة كلمة المرور إلى بريدك.</p>}
-      {status === 'unavailable' && (
-        <p className="text-ink/50 mt-1">هذه الخاصية تتطلب اتصالًا فعليًا بالخادم — جرّب لاحقًا أو تواصل مع الإدارة.</p>
-      )}
+      {status === 'failed' && <p className="text-ink/50 mt-1">تعذّر الإرسال حاليًا — حاول لاحقًا.</p>}
     </div>
   );
 }
