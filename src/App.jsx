@@ -17,6 +17,7 @@ import NewMuslims from './pages/NewMuslims';
 import ChastityLibrary from './pages/ChastityLibrary';
 import About from './pages/About';
 import Support from './pages/Support';
+import NotFound from './pages/NotFound';
 
 export default function App() {
   return (
@@ -39,6 +40,7 @@ export default function App() {
               <Route path="/chastity-library" element={<ChastityLibrary />} />
               <Route path="/about" element={<About />} />
               <Route path="/support" element={<Support />} />
+              <Route path="*" element={<NotFound />} />
             </Routes>
           </main>
           <Signature />
