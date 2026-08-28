@@ -4,6 +4,9 @@ export default function Footer() {
   return (
     <footer className="bg-emeraldDeep text-parchment/60 px-[6vw] pt-12 pb-8 text-sm mt-20">
       <div className="text-center mb-5 flex justify-center gap-4 flex-wrap">
+        <Link to="/support" className="font-mono text-xs text-goldSoft/70 hover:text-goldSoft underline">
+          ادعم المنصة
+        </Link>
         <Link to="/board" className="font-mono text-xs text-goldSoft/70 hover:text-goldSoft underline">
           لوحة مراجعة الهيئة الشرعية
         </Link>
