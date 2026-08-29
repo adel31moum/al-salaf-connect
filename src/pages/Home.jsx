@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import VerseBanner from '../components/VerseBanner';
+import MarriageStory from '../components/MarriageStory';
 
 export default function Home() {
   return (
@@ -27,6 +28,8 @@ export default function Home() {
         </div>
         <VerseBanner contextKey="home" />
       </section>
+
+      <MarriageStory />
     </div>
   );
 }
