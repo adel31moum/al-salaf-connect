@@ -64,8 +64,13 @@ export default function Zawaj() {
           </div>
         )}
         {myRejected.length > 0 && (
-          <div className="max-w-2xl mx-auto mt-4 bg-ink/5 border border-ink/20 rounded p-5 text-sm text-ink/60">
-            للأسف، لم تتم الموافقة على أحد ملفاتك. راجع ملاحظة الهيئة إن وُجدت، ويمكنك التسجيل مجددًا ببيانات أدق.
+          <div className="max-w-2xl mx-auto mt-4 bg-ink/5 border border-ink/20 rounded p-6 text-sm text-ink/70 space-y-3">
+            <p>للأسف، لم تتم الموافقة على أحد ملفاتك. راجع ملاحظة الهيئة إن وُجدت، ويمكنك التسجيل مجددًا ببيانات أدق.</p>
+            <p className="text-xs text-ink/50 leading-relaxed border-t border-ink/10 pt-3">
+              هذا لا يعني انتهاء الطريق — التعارف الشرعي المباشر عبر مسجدك المحلي يبقى دومًا الخيار
+              الأوسع والأكثر مرونة، ولا يعتمد على أي منصة إلكترونية. تواصل مع إمام أو مركز إسلامي
+              قريب منك لعرض حالتك عليه مباشرة.
+            </p>
           </div>
         )}
 
