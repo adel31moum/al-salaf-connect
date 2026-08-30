@@ -133,7 +133,7 @@ function BoardReviewPanel() {
       </p>
 
       {/* شريط إحصائي سريع */}
-      <div className="grid grid-cols-4 gap-3 mb-8">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
         {TABS.map((t) => (
           <div key={t.key} className="text-center border border-gold/20 rounded p-3 bg-parchment/50">
             <div className="font-display text-2xl text-emeraldDeep">{counts[t.key]}</div>
