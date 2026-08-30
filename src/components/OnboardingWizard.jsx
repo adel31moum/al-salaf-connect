@@ -58,6 +58,7 @@ export default function OnboardingWizard() {
   });
   const [quizAnswers, setQuizAnswers] = useState({});
   const [result, setResult] = useState(null);
+  const [pendingRoute, setPendingRoute] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
 
@@ -110,7 +111,14 @@ export default function OnboardingWizard() {
     }
 
     setSubmitting(false);
-    navigate(resolveSafeLandingPath(route.landingPage), { state: { route } });
+    setPendingRoute(route);
+    // لا ننتقل تلقائيًا — نعرض للمستخدم تأكيدًا واضحًا أولًا (نتيجة التشخيص، تأكيد الحفظ)
+    // ثم هو من يضغط "متابعة" بنفسه. الانتقال الفوري كان يخطف المستخدم لصفحة عشوائية
+    // دون أن يرى أي تأكيد بأن التسجيل نجح فعلًا — بالضبط الالتباس الذي كان يحدث.
+  };
+
+  const proceedToRecommendedPath = () => {
+    if (pendingRoute) navigate(resolveSafeLandingPath(pendingRoute.landingPage), { state: { route: pendingRoute } });
   };
 
   return (
@@ -287,6 +295,12 @@ export default function OnboardingWizard() {
           </p>
           <p className="text-emeraldDeep/70">تم إنشاء حسابك وحفظ بياناتك بنجاح في هذا المتصفح.</p>
           {result.marriageNotice && <p className="text-maroon mt-2">{result.marriageNotice.join(' ')}</p>}
+          <button
+            onClick={proceedToRecommendedPath}
+            className="w-full bg-gold text-emeraldDeep px-6 py-3 rounded font-medium mt-4"
+          >
+            متابعة إلى مسارك الموصى به ←
+          </button>
         </div>
       )}
     </div>
