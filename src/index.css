@@ -1,0 +1,129 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .star-field {
+    background-image: radial-gradient(
+        circle at 50% 50%,
+        transparent 0,
+        transparent 38%,
+        theme('colors.gold') 38.6%,
+        transparent 39.2%
+      ),
+      radial-gradient(circle at 0% 0%, transparent 0, transparent 38%, theme('colors.gold') 38.6%, transparent 39.2%),
+      radial-gradient(circle at 100% 0%, transparent 0, transparent 38%, theme('colors.gold') 38.6%, transparent 39.2%),
+      radial-gradient(circle at 0% 100%, transparent 0, transparent 38%, theme('colors.gold') 38.6%, transparent 39.2%),
+      radial-gradient(circle at 100% 100%, transparent 0, transparent 38%, theme('colors.gold') 38.6%, transparent 39.2%);
+    background-size: 120px 120px;
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* ==================== خلفيات "زيتية" مخصصة لكل صفحة/عنوان — CSS بحت ==================== */
+.oil-bg {
+  position: relative;
+  isolation: isolate;
+}
+.oil-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  filter: url(#oilGrain);
+  opacity: 0.5;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+.oil-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -3;
+  pointer-events: none;
+}
+
+/* hero/home: ليل زمردي بلمسات ذهبية */
+.oil-home::after {
+  background:
+    radial-gradient(ellipse 60% 45% at 22% 15%, rgba(198, 154, 69, 0.35), transparent 60%),
+    radial-gradient(ellipse 70% 60% at 85% 90%, rgba(107, 31, 42, 0.3), transparent 65%),
+    linear-gradient(160deg, #0a2e25 0%, #082821 45%, #06201a 100%);
+}
+/* aqeedah: مخطوطة عتيقة */
+.oil-aqeedah::after {
+  background:
+    radial-gradient(ellipse 50% 40% at 80% 10%, rgba(198, 154, 69, 0.18), transparent 60%),
+    radial-gradient(ellipse 60% 50% at 10% 90%, rgba(107, 31, 42, 0.1), transparent 65%),
+    linear-gradient(170deg, #F4EDDD 0%, #ece0c6 100%);
+}
+/* majalis: مكتبة عتيقة كهرمانية */
+.oil-majalis::after {
+  background:
+    radial-gradient(ellipse 55% 45% at 15% 20%, rgba(198, 154, 69, 0.22), transparent 60%),
+    radial-gradient(ellipse 50% 50% at 90% 80%, rgba(14, 59, 46, 0.12), transparent 65%),
+    linear-gradient(170deg, #F4EDDD 0%, #efe6cf 100%);
+}
+/* zawaj: طابع "ميثاق شرعي رسمي" — عاجي محايد بإطار زخرفي مزدوج، بلا أي دلالة رومانسية بصرية */
+.oil-zawaj::after {
+  background:
+    radial-gradient(ellipse 40% 35% at 8% 8%, rgba(198, 154, 69, 0.14), transparent 55%),
+    radial-gradient(ellipse 40% 35% at 92% 92%, rgba(107, 31, 42, 0.08), transparent 55%),
+    repeating-linear-gradient(135deg, rgba(198, 154, 69, 0.05) 0 2px, transparent 2px 34px),
+    linear-gradient(180deg, #F4EDDD 0%, #EEE4CC 100%);
+}
+/* إطار "ميثاق/عقد" مزدوج — يُستخدم لتأطير محتوى صفحة الزواج كوثيقة رسمية */
+.covenant-frame {
+  border: 1px solid rgba(198, 154, 69, 0.5);
+  outline: 1px solid rgba(198, 154, 69, 0.5);
+  outline-offset: 6px;
+  position: relative;
+}
+/* dawah: قرمزي عالمي */
+.oil-dawah::after {
+  background:
+    radial-gradient(ellipse 60% 50% at 75% 20%, rgba(198, 154, 69, 0.22), transparent 60%),
+    radial-gradient(ellipse 55% 60% at 15% 85%, rgba(8, 40, 33, 0.35), transparent 65%),
+    linear-gradient(200deg, #7a2434 0%, #6b1f2a 55%, #501621 100%);
+}
+/* join: شروق ذهبي */
+.oil-join::after {
+  background:
+    radial-gradient(ellipse 70% 50% at 50% 0%, rgba(198, 154, 69, 0.25), transparent 65%),
+    radial-gradient(ellipse 60% 40% at 50% 100%, rgba(14, 59, 46, 0.08), transparent 65%),
+    linear-gradient(180deg, #f8f1e1 0%, #F4EDDD 100%);
+}
+/* privacy: رمادي أردوازي هادئ */
+.oil-privacy::after {
+  background:
+    radial-gradient(ellipse 50% 40% at 20% 10%, rgba(198, 154, 69, 0.1), transparent 60%),
+    linear-gradient(180deg, #ede7d6 0%, #e6dfcc 100%);
+}
+
+/* ==================== شارة "دخول قوية" داكنة لرأس صفحة الزواج والعقيدة ==================== */
+/* نمط شبكي هندسي ثماني النجوم — طابع سلفي/مِثاقي قوي ومهيب، بلا أي تصوير آدمي */
+.dark-entry-band {
+  position: relative;
+  isolation: isolate;
+  background:
+    radial-gradient(ellipse 55% 45% at 50% -10%, rgba(198, 154, 69, 0.22), transparent 60%),
+    linear-gradient(180deg, #041712 0%, #06201a 55%, #082821 100%);
+  overflow: hidden;
+}
+.dark-entry-band::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  opacity: 0.16;
+  background-image: repeating-linear-gradient(45deg, transparent 0 26px, rgba(198, 154, 69, 0.5) 26px 27px),
+    repeating-linear-gradient(-45deg, transparent 0 26px, rgba(198, 154, 69, 0.5) 26px 27px);
+  pointer-events: none;
+}
+.dark-entry-band > * {
+  position: relative;
+  z-index: 1;
+}

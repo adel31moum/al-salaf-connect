@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://al-salaf-connect.netlify.app/</loc></url>
+  <url><loc>https://al-salaf-connect.netlify.app/about</loc></url>
+  <url><loc>https://al-salaf-connect.netlify.app/aqeedah</loc></url>
+  <url><loc>https://al-salaf-connect.netlify.app/majalis</loc></url>
+  <url><loc>https://al-salaf-connect.netlify.app/zawaj</loc></url>
+  <url><loc>https://al-salaf-connect.netlify.app/dawah</loc></url>
+  <url><loc>https://al-salaf-connect.netlify.app/new-muslims</loc></url>
+  <url><loc>https://al-salaf-connect.netlify.app/chastity-library</loc></url>
+  <url><loc>https://al-salaf-connect.netlify.app/support</loc></url>
+  <url><loc>https://al-salaf-connect.netlify.app/join</loc></url>
+  <url><loc>https://al-salaf-connect.netlify.app/privacy</loc></url>
+  <!-- /board مستثناة عمدًا — لوحة إدارية مقيَّدة، لا يجب فهرستها في محركات البحث -->
+</urlset>
