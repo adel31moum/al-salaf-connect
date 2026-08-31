@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>استوديو المقالب</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none; }
+  html,body { height:100%; overflow:hidden; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif; }
+
+  body { background:#0a0a0a; color:#fff; }
+
+  /* ===== SCREENS ===== */
+  .screen { display:none; flex-direction:column; height:100%; }
+  .screen.active { display:flex; }
+
+  /* ===== HOME ===== */
+  #homeScreen { align-items:center; justify-content:center; gap:20px; padding:24px; }
+  #homeScreen h1 { font-size:1.5rem; font-weight:800; text-align:center; }
+  #homeScreen .sub { font-size:0.8rem; opacity:0.35; text-align:center; line-height:1.5; }
+  .home-btns { display:flex; flex-direction:column; gap:14px; width:100%; max-width:300px; }
+  .home-btn {
+    border:none; border-radius:14px; padding:16px 24px; font-size:1rem; font-weight:700;
+    cursor:pointer; transition:transform .15s; display:flex; align-items:center; justify-content:center; gap:8px;
+  }
+  .home-btn:active { transform:scale(.96); }
+  .btn-record { background:linear-gradient(135deg,#f72585,#b5179e); color:#fff; box-shadow:0 5px 18px rgba(247,37,133,0.3); }
+  .btn-prank { background:linear-gradient(135deg,#25D366,#128C7E); color:#fff; box-shadow:0 5px 18px rgba(37,211,102,0.3); }
+  .btn-prank:disabled { opacity:0.3; }
+
+  .char-list { display:flex; flex-direction:column; gap:8px; width:100%; max-width:300px; margin-top:10px; }
+  .char-row {
+    display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:12px;
+    background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.06);
+  }
+  .char-row .dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+  .char-row .dot.ready { background:#25D366; }
+  .char-row .dot.empty { background:#555; }
+  .char-row .nm { font-size:0.85rem; font-weight:600; flex:1; }
+  .char-row .st { font-size:0.7rem; opacity:0.4; }
+
+  /* ===== RECORDING ===== */
+  #recordScreen { align-items:center; gap:15px; padding:20px; }
+  #recordScreen h2 { font-size:1.2rem; font-weight:700; margin-top:10px; }
+  .rec-instructions { font-size:0.8rem; opacity:0.45; text-align:center; line-height:1.5; max-width:300px; }
+  .video-preview {
+    width:100%; max-width:340px; aspect-ratio:9/16; border-radius:16px; overflow:hidden;
+    background:#111; border:2px solid rgba(255,255,255,0.1); position:relative;
+  }
+  .video-preview video { width:100%; height:100%; object-fit:cover; }
+  .video-preview .placeholder {
+    position:absolute; top:0; left:0; width:100%; height:100%;
+    display:flex; align-items:center; justify-content:center; flex-direction:column; gap:10px;
+    color:#444; font-size:0.85rem;
+  }
+  .rec-controls { display:flex; gap:30px; align-items:center; }
+  .rec-btn {
+    width:70px; height:70px; border-radius:50%; border:none; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; transition:transform .15s;
+  }
+  .rec-btn:active { transform:scale(.92); }
+  .rec-btn.idle { background:#ff3b30; }
+  .rec-btn.idle::after { content:'⏺'; font-size:2rem; color:#fff; }
+  .rec-btn.recording { background:#ff3b30; animation:recPulse 1s infinite; }
+  .rec-btn.recording::after { content:'⏹'; font-size:1.8rem; color:#fff; }
+  @keyframes recPulse { 0%,100%{box-shadow:0 0 0 0 rgba(255,59,48,0.5);} 50%{box-shadow:0 0 0 15px rgba(255,59,48,0);} }
+  .rec-timer { font-size:1.5rem; font-weight:700; font-variant-numeric:tabular-nums; color:#fff; }
+  .rec-timer.recording { color:#ff3b30; }
+
+  .rec-role-select { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+  .role-btn {
+    padding:10px 18px; border-radius:12px; border:2px solid rgba(255,255,255,0.1); background:transparent;
+    color:#fff; font-size:0.85rem; font-weight:600; cursor:pointer; transition:all .15s;
+  }
+  .role-btn.selected { border-color:#f72585; background:rgba(247,37,133,0.1); }
+  .role-btn:active { transform:scale(.95); }
+
+  .save-rec-btn {
+    background:#25D366; color:#fff; border:none; border-radius:12px;
+    padding:12px 28px; font-size:0.95rem; font-weight:700; cursor:pointer; display:none;
+  }
+  .save-rec-btn:active { transform:scale(.95); }
+
+  .retake-btn {
+    background:rgba(255,255,255,0.08); color:#fff; border:none; border-radius:12px;
+    padding:12px 28px; font-size:0.85rem; cursor:pointer; display:none;
+  }
+  .retake-btn:active { transform:scale(.95); }
+
+  .rec-back {
+    background:transparent; color:rgba(255,255,255,0.5); border:none;
+    font-size:0.85rem; cursor:pointer; position:absolute; top:20px; left:20px;
+  }
+
+  /* ===== RINGING ===== */
+  #ringScreen { align-items:center; justify-content:space-between; padding:50px 30px 60px; background:#0a0a0a; }
+  .ring-top { display:flex; flex-direction:column; align-items:center; gap:12px; margin-top:40px; }
+  .ring-avatar { width:120px; height:120px; border-radius:50%; overflow:hidden; border:3px solid #25D366; animation:ringPulse 1.5s infinite; }
+  @keyframes ringPulse { 0%,100%{box-shadow:0 0 0 0 rgba(37,211,102,0.4);} 50%{box-shadow:0 0 0 20px rgba(37,211,102,0);} }
+  .ring-avatar video, .ring-avatar img { width:100%; height:100%; object-fit:cover; }
+  .ring-name { font-size:1.8rem; font-weight:700; }
+  .ring-status { font-size:0.85rem; opacity:0.4; }
+  .ring-btns { display:flex; gap:60px; }
+  .ring-decline {
+    width:65px; height:65px; border-radius:50%; background:#ff3b30; border:none; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(255,59,48,0.3);
+  }
+  .ring-decline svg { width:28px; height:28px; fill:#fff; }
+  .ring-accept {
+    width:65px; height:65px; border-radius:50%; background:#25D366; border:none; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(37,211,102,0.3);
+    animation:accPulse 1s infinite;
+  }
+  @keyframes accPulse { 0%,100%{box-shadow:0 0 0 0 rgba(37,211,102,0.5);} 50%{box-shadow:0 0 0 15px rgba(37,211,102,0);} }
+  .ring-accept svg { width:30px; height:30px; fill:#fff; }
+
+  /* ===== VIDEO CALL ===== */
+  #callScreen { position:relative; overflow:hidden; }
+  .call-video { width:100%; height:100%; object-fit:cover; }
+  .call-overlay-top {
+    position:absolute; top:0; left:0; right:0; z-index:10;
+    padding:22px 20px 12px; background:linear-gradient(180deg,rgba(0,0,0,0.55),transparent);
+    display:flex; flex-direction:column; align-items:center; gap:3px;
+  }
+  .call-name { font-size:1.2rem; font-weight:600; text-shadow:0 1px 3px rgba(0,0,0,0.5); }
+  .call-timer { font-size:0.78rem; opacity:0.6; }
+  .call-end {
+    position:absolute; bottom:30px; left:50%; transform:translateX(-50%); z-index:10;
+    width:56px; height:56px; border-radius:50%; background:#ff3b30; border:none; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(255,59,48,0.35);
+  }
+  .call-end:active { transform:translateX(-50%) scale(.92); }
+  .call-end svg { width:26px; height:26px; fill:#fff; }
+
+  /* ===== ENDED ===== */
+  #endedScreen { align-items:center; justify-content:center; gap:16px; padding:30px; }
+  .ended-emoji { font-size:3rem; }
+  .ended-title { font-size:1.2rem; font-weight:700; }
+  .ended-sub { font-size:0.85rem; opacity:0.35; text-align:center; }
+  .ended-btns { display:flex; flex-direction:column; gap:10px; margin-top:10px; }
+  .ended-restart {
+    background:#25D366; color:#fff; border:none; border-radius:12px; padding:12px 28px;
+    font-size:0.95rem; font-weight:600; cursor:pointer;
+  }
+  .ended-restart:active { transform:scale(.95); }
+  .ended-home {
+    background:rgba(255,255,255,0.08); color:#fff; border:none; border-radius:12px;
+    padding:12px 28px; font-size:0.9rem; cursor:pointer;
+  }
+  .ended-home:active { transform:scale(.95); }
+  .ended-share {
+    background:rgba(37,211,102,0.12); color:#25D366; border:1px solid #25D366; border-radius:12px;
+    padding:10px 22px; font-size:0.8rem; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px; justify-content:center;
+  }
+  .ended-share:active { transform:scale(.95); }
+  .ended-share svg { width:15px; height:15px; fill:currentColor; }
+
+  /* ===== COUNTDOWN ===== */
+  #countdownScreen { align-items:center; justify-content:center; gap:20px; background:#0a0a0a; }
+  .countdown-num { font-size:4rem; font-weight:900; color:#25D366; }
+  .countdown-hint { font-size:0.85rem; opacity:0.4; text-align:center; }
+  .countdown-cancel {
+    background:rgba(255,255,255,0.08); color:#fff; border:none; border-radius:10px;
+    padding:10px 22px; font-size:0.85rem; cursor:pointer; margin-top:10px;
+  }
+
+  /* ===== UTIL ===== */
+  .hidden { display:none !important; }
+  .toast {
+    position:fixed; bottom:30px; left:50%; transform:translateX(-50%); z-index:999;
+    background:rgba(0,0,0,0.9); color:#fff; border-radius:12px; padding:12px 20px;
+    font-size:0.85rem; opacity:0; transition:opacity .3s; pointer-events:none;
+  }
+  .toast.show { opacity:1; }
+</style>
+</head>
+<body>
+
+<!-- ===== HOME ===== -->
+<div class="screen active" id="homeScreen">
+  <h1>🎬 استوديو المقالب</h1>
+  <p class="sub">سجل فيديو حقيقي من أي شخص<br>ثم استخدمه كمكالمة فيديو واردة</p>
+  <div class="home-btns">
+    <button class="home-btn btn-record" id="goRecord">🎥 تسجيل شخصية جديدة</button>
+    <button class="home-btn btn-prank" id="goPrank" disabled>📞 بدء المقلب</button>
+  </div>
+  <div class="char-list" id="charList"></div>
+  <p class="sub" style="margin-top:10px">المقاطع محفوظة على هاتفك — تعمل بدون إنترنت</p>
+</div>
+
+<!-- ===== RECORDING ===== -->
+<div class="screen" id="recordScreen">
+  <button class="rec-back" id="recBack">← رجوع</button>
+  <h2>🎥 تسجيل فيديو</h2>
+  <p class="rec-instructions">اختر الدور، ثم اضغط زر التسجيل. سجّل شخصاً حقيقياً يتحدث للكاميرا (10 ثواني على الأقل)</p>
+  <div class="rec-role-select" id="roleSelect">
+    <button class="role-btn selected" data-role="wife">زوجة</button>
+    <button class="role-btn" data-role="mother">أم</button>
+    <button class="role-btn" data-role="friend">صديقة</button>
+    <button class="role-btn" data-role="other">أخرى</button>
+  </div>
+  <div class="video-preview" id="videoPreview">
+    <div class="placeholder" id="previewPlaceholder">
+      <span style="font-size:2.5rem">📱</span>
+      <span>اضغط التسجيل لبدء الكاميرا</span>
+    </div>
+    <video id="previewVideo" style="display:none" autoplay muted playsinline></video>
+    <video id="playbackVideo" style="display:none" playsinline></video>
+  </div>
+  <div class="rec-timer" id="recTimer">00:00</div>
+  <div class="rec-controls">
+    <button class="rec-btn idle" id="recBtn"></button>
+  </div>
+  <button class="save-rec-btn" id="saveBtn">✓ حفظ واستخدام</button>
+  <button class="retake-btn" id="retakeBtn">↻ إعادة التسجيل</button>
+</div>
+
+<!-- ===== COUNTDOWN ===== -->
+<div class="screen" id="countdownScreen">
+  <div class="countdown-num" id="countdownNum">5</div>
+  <p class="countdown-hint">ضع الهاتف جانباً...<br>ستبدأ المكالمة الواردة قريباً</p>
+  <button class="countdown-cancel" id="cancelCountdown">إلغاء</button>
+</div>
+
+<!-- ===== RINGING ===== -->
+<div class="screen" id="ringScreen">
+  <div class="ring-top">
+    <div class="ring-avatar" id="ringAvatar"></div>
+    <div class="ring-name" id="ringName">مكالمة فيديو</div>
+    <div class="ring-status">مكالمة فيديو واردة...</div>
+  </div>
+  <div class="ring-btns">
+    <button class="ring-decline" id="declineBtn"><svg viewBox="0 0 24 24"><path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08a.956.956 0 0 1-.29-.7c0-.28.11-.53.29-.71C3.34 8.78 7.46 7 12 7s8.66 1.78 11.42 4.67c.18.18.29.43.29.71 0 .28-.11.52-.29.71l-2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.1-.7-.28a11.27 11.27 0 0 0-2.66-1.85.996.996 0 0 1-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z" transform="rotate(135 12 12)"/></svg></button>
+    <button class="ring-accept" id="acceptBtn"><svg viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg></button>
+  </div>
+</div>
+
+<!-- ===== VIDEO CALL ===== -->
+<div class="screen" id="callScreen">
+  <video class="call-video" id="callVideo" autoplay loop playsinline></video>
+  <div class="call-overlay-top">
+    <div class="call-name" id="callName">مكالمة فيديو</div>
+    <div class="call-timer" id="callTimer">00:00</div>
+  </div>
+  <button class="call-end" id="callEnd"><svg viewBox="0 0 24 24"><path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08a.956.956 0 0 1-.29-.7c0-.28.11-.53.29-.71C3.34 8.78 7.46 7 12 7s8.66 1.78 11.42 4.67c.18.18.29.43.29.71 0 .28-.11.52-.29.71l-2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.1-.7-.28a11.27 11.27 0 0 0-2.66-1.85.996.996 0 0 1-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z" transform="rotate(135 12 12)"/></svg></button>
+</div>
+
+<!-- ===== ENDED ===== -->
+<div class="screen" id="endedScreen">
+  <div class="ended-emoji">📞</div>
+  <div class="ended-title">انتهت المكالمة</div>
+  <div class="ended-sub">هل خدع أحداً؟ 😈</div>
+  <div class="ended-btns">
+    <button class="ended-restart" id="endedRestart">مكالمة جديدة</button>
+    <button class="ended-home" id="endedHome">الصفحة الرئيسية</button>
+    <button class="ended-share" id="shareBtn"><svg viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/></svg>شارك التطبيق</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function() {
+  'use strict';
+
+  // ===== STATE =====
+  var clips = {}; // { role: { blob, url, name } }
+  var currentRole = 'wife';
+  var mediaRecorder = null;
+  var recordedChunks = [];
+  var stream = null;
+  var recording = false;
+  var recTimerInterval = null;
+  var recSeconds = 0;
+  var callTimerInterval = null;
+  var callSec = 0;
+  var ringAudioCtx = null;
+  var ringInterval = null;
+
+  var ROLE_NAMES = { wife:'زوجتي ❤️', mother:'والدتي 🤲', friend:'صديقتي 😏', other:'مكالمة واردة' };
+  var ROLE_COLORS = { wife:'#e83e8c', mother:'#6f42c1', friend:'#25D366', other:'#4a6cf7' };
+
+  // ===== ELEMENTS =====
+  var $ = function(id){ return document.getElementById(id); };
+  var screens = ['homeScreen','recordScreen','countdownScreen','ringScreen','callScreen','endedScreen'];
+
+  function showScreen(id) {
+    screens.forEach(function(s){ $(s).classList.remove('active'); });
+    $(id).classList.add('active');
+  }
+
+  function toast(msg) {
+    var t = $('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(function(){ t.classList.remove('show'); }, 2500);
+  }
+
+  // ===== UPDATE CHAR LIST =====
+  function updateCharList() {
+    var list = $('charList');
+    list.innerHTML = '';
+    var roles = ['wife','mother','friend','other'];
+    var hasAny = false;
+    roles.forEach(function(r) {
+      var div = document.createElement('div');
+      div.className = 'char-row';
+      var ready = !!clips[r];
+      if (ready) hasAny = true;
+      div.innerHTML = '<div class="dot '+(ready?'ready':'empty')+'"></div>' +
+        '<div class="nm">'+ROLE_NAMES[r]+'</div>' +
+        '<div class="st">'+(ready?'جاهز ✓':'غير مسجل')+'</div>';
+      list.appendChild(div);
+    });
+    $('goPrank').disabled = !hasAny;
+  }
+
+  // ===== HOME =====
+  $('goRecord').addEventListener('click', function() {
+    showScreen('recordScreen');
+    resetRecording();
+  });
+
+  $('goPrank').addEventListener('click', function() {
+    showScreen('countdownScreen');
+    startCountdown();
+  });
+
+  // ===== ROLE SELECT =====
+  document.querySelectorAll('.role-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.role-btn').forEach(function(b){ b.classList.remove('selected'); });
+      btn.classList.add('selected');
+      currentRole = btn.dataset.role;
+    });
+  });
+
+  // ===== RECORDING =====
+  function resetRecording() {
+    $('previewPlaceholder').style.display = 'flex';
+    $('previewVideo').style.display = 'none';
+    $('playbackVideo').style.display = 'none';
+    $('saveBtn').style.display = 'none';
+    $('retakeBtn').style.display = 'none';
+    $('recBtn').className = 'rec-btn idle';
+    $('recTimer').textContent = '00:00';
+    $('recTimer').classList.remove('recording');
+    recording = false;
+    recordedChunks = [];
+    if (stream) { stream.getTracks().forEach(function(t){ t.stop(); }); stream = null; }
+  }
+
+  $('recBtn').addEventListener('click', function() {
+    if (!recording) startRecording();
+    else stopRecording();
+  });
+
+  function startRecording() {
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: true })
+      .then(function(s) {
+        stream = s;
+        var preview = $('previewVideo');
+        preview.srcObject = s;
+        preview.style.display = 'block';
+        $('previewPlaceholder').style.display = 'none';
+        $('playbackVideo').style.display = 'none';
+
+        recordedChunks = [];
+        var options = { mimeType: 'video/webm;codecs=vp9,opus' };
+        if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+          options = { mimeType: 'video/webm;codecs=vp8,opus' };
+          if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+            options = { mimeType: 'video/webm' };
+          }
+        }
+        mediaRecorder = new MediaRecorder(s, options);
+        mediaRecorder.ondataavailable = function(e) {
+          if (e.data && e.data.size > 0) recordedChunks.push(e.data);
+        };
+        mediaRecorder.onstop = function() {
+          var blob = new Blob(recordedChunks, { type: 'video/webm' });
+          var url = URL.createObjectURL(blob);
+          var playback = $('playbackVideo');
+          playback.src = url;
+          playback.style.display = 'block';
+          preview.style.display = 'none';
+          $('saveBtn').style.display = 'block';
+          $('retakeBtn').style.display = 'block';
+
+          // Save temporarily
+          window._tempBlob = blob;
+          window._tempUrl = url;
+        };
+        mediaRecorder.start();
+        recording = true;
+        $('recBtn').className = 'rec-btn recording';
+        $('recTimer').classList.add('recording');
+        recSeconds = 0;
+        $('recTimer').textContent = '00:00';
+        recTimerInterval = setInterval(function() {
+          recSeconds++;
+          var m = String(Math.floor(recSeconds/60)).padStart(2,'0');
+          var s = String(recSeconds%60).padStart(2,'0');
+          $('recTimer').textContent = m+':'+s;
+          if (recSeconds >= 30) stopRecording();
+        }, 1000);
+      })
+      .catch(function(err) {
+        toast('لا يمكن الوصول للكاميرا. اسمح بالوصول.');
+      });
+  }
+
+  function stopRecording() {
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+    recording = false;
+    $('recBtn').className = 'rec-btn idle';
+    $('recTimer').classList.remove('recording');
+    clearInterval(recTimerInterval);
+    if (stream) { stream.getTracks().forEach(function(t){ t.stop(); }); stream = null; }
+  }
+
+  $('saveBtn').addEventListener('click', function() {
+    if (!window._tempBlob) return;
+    clips[currentRole] = { blob: window._tempBlob, url: window._tempUrl, name: ROLE_NAMES[currentRole] };
+    updateCharList();
+    toast('✓ تم حفظ ' + ROLE_NAMES[currentRole]);
+    setTimeout(function() { showScreen('homeScreen'); }, 800);
+  });
+
+  $('retakeBtn').addEventListener('click', function() { resetRecording(); });
+  $('recBack').addEventListener('click', function() { resetRecording(); showScreen('homeScreen'); });
+
+  // ===== COUNTDOWN =====
+  function startCountdown() {
+    var count = 5;
+    $('countdownNum').textContent = count;
+    var ci = setInterval(function() {
+      count--;
+      if (count > 0) $('countdownNum').textContent = count;
+      else {
+        clearInterval(ci);
+        startRinging();
+      }
+    }, 1000);
+    $('cancelCountdown').onclick = function() { clearInterval(ci); showScreen('homeScreen'); };
+  }
+
+  // ===== RINGTONE (LOUD, NATIVE SYNTH) =====
+  function startRingtone() {
+    if (!ringAudioCtx) ringAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (ringAudioCtx.state === 'suspended') ringAudioCtx.resume();
+
+    function burst(t) {
+      for (var i = 0; i < 2; i++) {
+        var tt = t + i * 0.4;
+        // High tone
+        var o1 = ringAudioCtx.createOscillator(), g1 = ringAudioCtx.createGain();
+        o1.type = 'sine'; o1.frequency.setValueAtTime(440, tt); o1.frequency.setValueAtTime(480, tt+0.1);
+        g1.gain.setValueAtTime(0, tt); g1.gain.linearRampToValueAtTime(0.25, tt+0.02);
+        g1.gain.setValueAtTime(0.25, tt+0.18); g1.gain.linearRampToValueAtTime(0, tt+0.2);
+        o1.connect(g1); g1.connect(ringAudioCtx.destination); o1.start(tt); o1.stop(tt+0.2);
+        // Low tone
+        var o2 = ringAudioCtx.createOscillator(), g2 = ringAudioCtx.createGain();
+        o2.type = 'sine'; o2.frequency.setValueAtTime(440, tt+0.2); o2.frequency.setValueAtTime(480, tt+0.3);
+        g2.gain.setValueAtTime(0, tt+0.2); g2.gain.linearRampToValueAtTime(0.25, tt+0.22);
+        g2.gain.setValueAtTime(0.25, tt+0.38); g2.gain.linearRampToValueAtTime(0, tt+0.4);
+        o2.connect(g2); g2.connect(ringAudioCtx.destination); o2.start(tt+0.2); o2.stop(tt+0.4);
+      }
+    }
+    burst(ringAudioCtx.currentTime);
+    ringInterval = setInterval(function() { burst(ringAudioCtx.currentTime); }, 3000);
+  }
+
+  function stopRingtone() {
+    if (ringInterval) { clearInterval(ringInterval); ringInterval = null; }
+  }
+
+  // ===== RINGING =====
+  function startRinging() {
+    // Find first available clip
+    var role = null;
+    ['wife','mother','friend','other'].forEach(function(r) { if (clips[r] && !role) role = r; });
+    if (!role) { toast('لا يوجد مقاطع مسجلة'); showScreen('homeScreen'); return; }
+
+    var clip = clips[role];
+    $('ringName').textContent = clip.name;
+
+    // Set avatar (first frame from video)
+    var av = $('ringAvatar');
+    av.innerHTML = '<video src="' + clip.url + '" muted></video>';
+    // Try to show first frame
+    var avVid = av.querySelector('video');
+    avVid.currentTime = 0;
+
+    showScreen('ringScreen');
+    startRingtone();
+    if ('vibrate' in navigator) navigator.vibrate([400,200,400,200,400,200,400,200,400,600,400]);
+
+    $('declineBtn').onclick = function() {
+      stopRingtone();
+      if ('vibrate' in navigator) navigator.vibrate(0);
+      showScreen('endedScreen');
+    };
+
+    $('acceptBtn').onclick = function() {
+      stopRingtone();
+      if ('vibrate' in navigator) navigator.vibrate(0);
+      startCall(role, clip);
+    };
+  }
+
+  // ===== VIDEO CALL =====
+  function startCall(role, clip) {
+    var video = $('callVideo');
+    video.src = clip.url;
+    video.muted = false;
+    video.play().catch(function(){ /* autoplay might need user gesture */ });
+
+    $('callName').textContent = clip.name;
+    callSec = 0;
+    $('callTimer').textContent = '00:00';
+    showScreen('callScreen');
+
+    callTimerInterval = setInterval(function() {
+      callSec++;
+      var m = String(Math.floor(callSec/60)).padStart(2,'0');
+      var s = String(callSec%60).padStart(2,'0');
+      $('callTimer').textContent = m+':'+s;
+    }, 1000);
+
+    // Keep screen on
+    if ('wakeLock' in navigator) {
+      navigator.wakeLock.request('screen').catch(function(){});
+    }
+
+    $('callEnd').onclick = function() {
+      video.pause();
+      clearInterval(callTimerInterval);
+      showScreen('endedScreen');
+    };
+  }
+
+  // ===== ENDED =====
+  $('endedRestart').addEventListener('click', function() {
+    showScreen('countdownScreen');
+    startCountdown();
+  });
+  $('endedHome').addEventListener('click', function() { showScreen('homeScreen'); });
+
+  // ===== SHARE =====
+  var shareTxt = '🎬 استوديو المقالب! سجل فيديو حقيقي واستخدمه كمكالمة فيديو واردة. جرّبه!';
+  $('shareBtn').addEventListener('click', function() {
+    var url = window.location.href;
+    if (navigator.share) navigator.share({ title:'استوديو المقالب', text:shareTxt, url:url }).catch(function(){});
+    else window.open('https://wa.me/?text='+encodeURIComponent(shareTxt+' '+url), '_blank');
+  });
+
+  // ===== INIT =====
+  updateCharList();
+  document.addEventListener('contextmenu', function(e){ e.preventDefault(); });
+
+  // Request persistent storage
+  if (navigator.storage && navigator.storage.persist) {
+    navigator.storage.persist().catch(function(){});
+  }
+
+})();
+</script>
+</body>
+</html>
